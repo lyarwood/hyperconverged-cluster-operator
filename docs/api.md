@@ -9,6 +9,7 @@ This Document documents the types introduced by the hyperconverged-cluster-opera
 * [ApplicationAwareConfigurations](#applicationawareconfigurations)
 * [CertRotateConfigCA](#certrotateconfigca)
 * [CertRotateConfigServer](#certrotateconfigserver)
+* [CommonInstancetypesDeployment](#commoninstancetypesdeployment)
 * [DataImportCronStatus](#dataimportcronstatus)
 * [DataImportCronTemplate](#dataimportcrontemplate)
 * [DataImportCronTemplateStatus](#dataimportcrontemplatestatus)
@@ -67,6 +68,16 @@ CertRotateConfigServer contains the tunables for TLS certificates.
 | ----- | ----------- | ------ | -------- |-------- |
 | duration | The requested 'duration' (i.e. lifetime) of the Certificate. This should comply with golang's ParseDuration format (https://golang.org/pkg/time/#ParseDuration) | *metav1.Duration | "24h0m0s" | false |
 | renewBefore | The amount of time before the currently issued certificate's `notAfter` time that we will begin to attempt to renew the certificate. This should comply with golang's ParseDuration format (https://golang.org/pkg/time/#ParseDuration) | *metav1.Duration | "12h0m0s" | false |
+
+[Back to TOC](#table-of-contents)
+
+## CommonInstancetypesDeployment
+
+
+
+| Field | Description | Scheme | Default | Required |
+| ----- | ----------- | ------ | -------- |-------- |
+| enabled | Enabled controls the deployment of common-instancetypes resources, defaults to True. | *bool |  | false |
 
 [Back to TOC](#table-of-contents)
 
@@ -233,6 +244,7 @@ HyperConvergedSpec defines the desired state of HyperConverged
 | networkBinding | NetworkBinding defines the network binding plugins. Those bindings can be used when defining virtual machine interfaces. | map[string]v1.InterfaceBindingPlugin |  | false |
 | applicationAwareConfig | ApplicationAwareConfig set the AAQ configurations | *[ApplicationAwareConfigurations](#applicationawareconfigurations) |  | false |
 | higherWorkloadDensity | HigherWorkloadDensity holds configurataion aimed to increase virtual machine density | *[HigherWorkloadDensityConfiguration](#higherworkloaddensityconfiguration) | {"memoryOvercommitPercentage": 100} | false |
+| CommonInstancetypesDeployment | CommonInstancetypesDeployment holds the configuration of common-instancetypes deployment within KubeVirt. | *[CommonInstancetypesDeployment](#commoninstancetypesdeployment) |  | false |
 
 [Back to TOC](#table-of-contents)
 

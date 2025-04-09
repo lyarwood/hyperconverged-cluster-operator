@@ -139,7 +139,6 @@ var (
 		kvHotplugNicsGate,
 		kvVMPersistentState,
 		kvHNetworkBindingPluginsGate,
-		kvDeployCommonInstancetypes,
 		kvVMLiveUpdateFeatures,
 	}
 
@@ -529,6 +528,7 @@ func getKVConfig(hc *hcov1beta1.HyperConverged) (*kubevirtcorev1.KubeVirtConfigu
 	if hc.Spec.ResourceRequirements != nil {
 		config.AutoCPULimitNamespaceLabelSelector = hc.Spec.ResourceRequirements.AutoCPULimitNamespaceLabelSelector.DeepCopy()
 	}
+
 	return config, nil
 }
 
@@ -759,6 +759,14 @@ func getKVDevConfig(hc *hcov1beta1.HyperConverged) *kubevirtcorev1.DeveloperConf
 	if len(fgs) > 0 {
 		devConf.FeatureGates = fgs
 	}
+
+	// With kubevirt v1.3.0 we only have a FG to control common-instancetypes deployment
+	// Only enable the FG here when HCO hasn't been explictly told to disable deployment
+	commonInstancetypesDeploymentConfig := hc.Spec.CommonInstancetypesDeployment
+	if commonInstancetypesDeploymentConfig == nil || commonInstancetypesDeploymentConfig.Enabled == nil || *commonInstancetypesDeploymentConfig.Enabled {
+		devConf.FeatureGates = append(devConf.FeatureGates, kvDeployCommonInstancetypes)
+	}
+
 	if useKVMEmulation {
 		devConf.UseEmulation = useKVMEmulation
 	}

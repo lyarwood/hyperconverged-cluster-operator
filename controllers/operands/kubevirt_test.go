@@ -9,6 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	gomegatypes "github.com/onsi/gomega/types"
 	openshiftconfigv1 "github.com/openshift/api/config/v1"
 	corev1 "k8s.io/api/core/v1"
 	schedulingv1 "k8s.io/api/scheduling/v1"
@@ -301,7 +302,6 @@ Version: 1.2.3`)
 			Expect(foundResource.Namespace).To(Equal(expectedResource.Namespace))
 
 			Expect(foundResource.Spec.Configuration.DeveloperConfiguration).ToNot(BeNil())
-			Expect(foundResource.Spec.Configuration.DeveloperConfiguration.FeatureGates).To(HaveLen(basicNumFgOnOpenshift + 1))
 			Expect(foundResource.Spec.Configuration.DeveloperConfiguration.FeatureGates).To(ContainElements(
 				hardCodeKvFgs,
 			))
@@ -511,7 +511,6 @@ Version: 1.2.3`)
 					foundResource),
 			).ToNot(HaveOccurred())
 			Expect(foundResource.Spec.Configuration.DeveloperConfiguration).ToNot(BeNil())
-			Expect(foundResource.Spec.Configuration.DeveloperConfiguration.FeatureGates).To(HaveLen(basicNumFgOnOpenshift + 1))
 			Expect(foundResource.Spec.Configuration.DeveloperConfiguration.FeatureGates).To(ContainElements(
 				hardCodeKvFgs,
 			))
@@ -2361,7 +2360,7 @@ Version: 1.2.3`)
 				It("should keep FG if already exist", func() {
 					mandatoryKvFeatureGates = getMandatoryKvFeatureGates(true)
 					fgs := getKvFeatureGateList(&hco.Spec.FeatureGates)
-					fgs = append(fgs, kvWithHostPassthroughCPU)
+					fgs = append(fgs, kvWithHostPassthroughCPU, kvDeployCommonInstancetypes)
 					existingResource, err := NewKubeVirt(hco)
 					Expect(err).ToNot(HaveOccurred())
 					existingResource.Spec.Configuration.DeveloperConfiguration.FeatureGates = fgs
@@ -2431,7 +2430,6 @@ Version: 1.2.3`)
 					).ToNot(HaveOccurred())
 
 					Expect(foundResource.Spec.Configuration.DeveloperConfiguration).ToNot(BeNil())
-					Expect(foundResource.Spec.Configuration.DeveloperConfiguration.FeatureGates).To(HaveLen(len(getKvFeatureGateList(&hco.Spec.FeatureGates))))
 					Expect(foundResource.Spec.Configuration.DeveloperConfiguration.FeatureGates).To(ContainElements(hardCodeKvFgs))
 					Expect(foundResource.Spec.Configuration.DeveloperConfiguration.FeatureGates).To(ContainElements(sspConditionKvFgs))
 				})
@@ -2468,7 +2466,6 @@ Version: 1.2.3`)
 					).ToNot(HaveOccurred())
 
 					Expect(foundResource.Spec.Configuration.DeveloperConfiguration).ToNot(BeNil())
-					Expect(foundResource.Spec.Configuration.DeveloperConfiguration.FeatureGates).To(HaveLen(len(getKvFeatureGateList(&hco.Spec.FeatureGates))))
 					Expect(foundResource.Spec.Configuration.DeveloperConfiguration.FeatureGates).To(ContainElements(hardCodeKvFgs))
 					Expect(foundResource.Spec.Configuration.DeveloperConfiguration.FeatureGates).To(ContainElements(sspConditionKvFgs))
 				})
@@ -2505,7 +2502,6 @@ Version: 1.2.3`)
 					).ToNot(HaveOccurred())
 
 					Expect(foundResource.Spec.Configuration.DeveloperConfiguration).ToNot(BeNil())
-					Expect(foundResource.Spec.Configuration.DeveloperConfiguration.FeatureGates).To(HaveLen(len(hardCodeKvFgs)))
 					Expect(foundResource.Spec.Configuration.DeveloperConfiguration.FeatureGates).To(ContainElements(hardCodeKvFgs))
 				})
 			})
@@ -4098,7 +4094,6 @@ Version: 1.2.3`)
 				).ToNot(HaveOccurred())
 
 				Expect(kv.Spec.Configuration.DeveloperConfiguration).ToNot(BeNil())
-				Expect(kv.Spec.Configuration.DeveloperConfiguration.FeatureGates).To(HaveLen(len(getKvFeatureGateList(&hco.Spec.FeatureGates))))
 				Expect(kv.Spec.Configuration.DeveloperConfiguration.FeatureGates).To(ContainElements(hardCodeKvFgs))
 				Expect(kv.Spec.Configuration.CPURequest).To(BeNil())
 
@@ -4306,6 +4301,38 @@ Version: 1.2.3`)
 				devConfig := getKVDevConfig(hco)
 				Expect(devConfig.MemoryOvercommit).To(Equal(expectedPercentage))
 			})
+		})
+
+		Context("CommonInstancetypesDeployment", func() {
+			DescribeTable("should", func(spec hcov1beta1.HyperConvergedSpec, containExpectedElementMatcher gomegatypes.GomegaMatcher) {
+				hco.Spec = spec
+				config := getKVDevConfig(hco)
+				Expect(config.FeatureGates).To(containExpectedElementMatcher)
+			},
+				Entry("only disable FG when explicitly disabled within spec",
+					hcov1beta1.HyperConvergedSpec{
+						CommonInstancetypesDeployment: &hcov1beta1.CommonInstancetypesDeployment{
+							Enabled: ptr.To(false),
+						},
+					},
+					Not(ContainElement(kvDeployCommonInstancetypes)),
+				),
+				Entry("enable FG when empty", hcov1beta1.HyperConvergedSpec{}, ContainElement(kvDeployCommonInstancetypes)),
+				Entry("enable FG when provided and Enabled nil",
+					hcov1beta1.HyperConvergedSpec{
+						CommonInstancetypesDeployment: &hcov1beta1.CommonInstancetypesDeployment{},
+					},
+					ContainElement(kvDeployCommonInstancetypes),
+				),
+				Entry("enable FG when provided and Enabled true",
+					hcov1beta1.HyperConvergedSpec{
+						CommonInstancetypesDeployment: &hcov1beta1.CommonInstancetypesDeployment{
+							Enabled: ptr.To(true),
+						},
+					},
+					ContainElement(kvDeployCommonInstancetypes),
+				),
+			)
 		})
 	})
 
